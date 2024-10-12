@@ -17,20 +17,21 @@ void map_exec(unsigned char bytes[], size_t size){
 
 void bfexec(INST inst[MAX_INST_CAPACITY]){
 
+    unsigned char tape[3000] = {0};
+    unsigned char* head = tape;
+
     for(int ip = 0 ; ip <= MAX_INST_CAPACITY; ip++){
-        
+     
         switch (inst[ip].opcode) {
 
             case INST_EXIT: 
                 unsigned char bytes[] = { 0xb8, 0x3c, 0x00, 0x00, 0x00,       //mov rax, 60
-                    0xbf, 0x07, 0x00, 0x00, 0x00,                             //mov rdi, 0
+                    0xbf, 0x00, 0x00, 0x00, 0x00,                             //mov rdi, 0
                     0x0f, 0x05                                                          //syscall    
                 };
 
                 map_exec(bytes, sizeof(bytes));
                 break;
-
-
 
             case INST_INC:
             case INST_DEC:
@@ -40,14 +41,8 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
             case INST_OUT:
             case INST_JMP_IF_ZERO:
             case INST_JMP_IF_NONZERO:
+            default:
         
         }
-
-
-     
-
-
     }    
-
-
 }
