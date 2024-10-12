@@ -3,6 +3,7 @@
 #include <error.h>
 #include "transform.h"
 #include "bfdef.h"
+#include "bfexec.h"
 
 void usage(char* s) {
     fprintf(stderr, "Usage: %s <prog.bf>", s);
@@ -58,11 +59,14 @@ int main(int argc, char* argv[]) {
     };
 
     transform(prog, inst);
-    
+    free(prog);
+
     for(int i = 0 ; i < MAX_INST_CAPACITY ; i++ ){
         if(inst[i].opcode == INST_EXIT) break;
         printf("%c {%d} \n", inst[i].opcode, inst[i].operand);
     }
+
+    bfexec(inst);
     
     return EXIT_SUCCESS ;
 }
