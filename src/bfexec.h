@@ -7,8 +7,7 @@
 #include <string.h>
 #include "bfdef.h"
 
-
-void map_exec(unsigned char bytes[], size_t size);
+void* make_exec(unsigned char*, size_t);
 void bfexec(INST inst[MAX_INST_CAPACITY]);
 
 #endif

@@ -4,7 +4,7 @@
 #define MAX_INST_CAPACITY 256
 
 typedef enum {
-    INST_EXIT = 0,
+        INST_EXIT = 0,
         INST_INC = '+',
         INST_DEC = '-',
         INST_MOVL = '<',
