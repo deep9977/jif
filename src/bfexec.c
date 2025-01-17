@@ -49,7 +49,7 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
     unsigned char do_INST_MOVL_bytes[] = {
         0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov rax, address_of_head
         0xbb, 0x00, 0x00, 0x00, 0x00,                                           //mov rbx, inst.operand    
-        0x48,0x29, 0x18,                                                        //add QWORD [rax], rbx
+        0x48,0x29, 0x18,                                                        //sub QWORD [rax], rbx
         0xc3                                                                    //ret      
     };
     memcpy(&do_INST_MOVL_bytes[2], &head_add, sizeof(char**));
@@ -57,24 +57,53 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
     void (*do_INST_MOVL)() = (void(*)())ptr_do_INST_MOVL_bytes;
 
     unsigned char do_INST_INC_bytes[] = {
-        0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov rax, value_of_head
+        0x49, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov r8, address_of_head
+        0x49, 0x8b ,0x00,                                                       //mov rax, [r8]
         0xbb, 0x00, 0x00, 0x00, 0x00,                                           //mov rbx, inst.operand    
         0x48,0x01, 0x18,                                                        //add QWORD [rax], rbx
         0xc3                                                                    //ret      
     };
-    memcpy(&do_INST_INC_bytes[2], &head, sizeof(char*));
+    memcpy(&do_INST_INC_bytes[2], &head_add, sizeof(char*));
     unsigned char* ptr_do_INST_INC_bytes = make_exec(do_INST_INC_bytes, sizeof(do_INST_INC_bytes));
     void (*do_INST_INC)() = (void(*)())ptr_do_INST_INC_bytes;
 
     unsigned char do_INST_DEC_bytes[] = {
-        0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov rax, value_of_head
+         0x49, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov r8, address_of_head
+        0x49, 0x8b ,0x00,                                                       //mov rax, [r8]
         0xbb, 0x00, 0x00, 0x00, 0x00,                                           //mov rbx, inst.operand    
         0x48,0x29, 0x18,                                                        //sub QWORD [rax], rbx
         0xc3                                                                    //ret      
     };
-    memcpy(&do_INST_DEC_bytes[2], &head, sizeof(char*));
+    memcpy(&do_INST_DEC_bytes[2], &head_add, sizeof(char*));
     unsigned char* ptr_do_INST_DEC_bytes = make_exec(do_INST_INC_bytes, sizeof(do_INST_DEC_bytes));
     void (*do_INST_DEC)() = (void(*)())ptr_do_INST_DEC_bytes;
+
+    unsigned char do_INST_IN_bytes[] = {
+        0x49, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov r8, address_of_head
+        0xb8, 0x00, 0x00, 0x00, 0x00,                                           //mov rax, 0    
+        0xbf, 0x00, 0x00, 0x00, 0x0,                                            //add rdi, 0
+        0x49, 0x8b, 0x30,                                                        //mov [r8], rsi
+        0xba, 0x01, 0x00, 0x00, 0x0,                                            //mov rdx, 1 
+        0x0f, 0x05,                                                             //syscall
+        0xc3                                                                    //ret      
+    };
+    memcpy(&do_INST_IN_bytes[2], &head_add, sizeof(char**));
+    unsigned char* ptr_do_INST_IN_bytes = make_exec(do_INST_IN_bytes, sizeof(do_INST_IN_bytes));
+    void (*do_INST_IN)() = (void(*)())ptr_do_INST_IN_bytes;
+
+
+    unsigned char do_INST_OUT_bytes[] = {
+        0x49, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov r8, address_of_head
+        0xb8, 0x01, 0x00, 0x00, 0x00,                                           //mov rax, 1    
+        0xbf, 0x01, 0x00, 0x00, 0x0,                                            //add rdi, 1
+        0x49, 0x8b, 0x30,                                                         //mov [r8], rsi
+        0xba, 0x01, 0x00, 0x00, 0x0,                                            //mov rdx, 1 
+        0x0f, 0x05,                                                             //syscall
+        0xc3                                                                    //ret      
+    };
+    memcpy(&do_INST_OUT_bytes[2], &head_add, sizeof(char**));
+    unsigned char* ptr_do_INST_OUT_bytes = make_exec(do_INST_OUT_bytes, sizeof(do_INST_OUT_bytes));
+    void (*do_INST_OUT)() = (void(*)())ptr_do_INST_OUT_bytes;
 
 
     for(int ip = 0 ; ip < MAX_INST_CAPACITY; ip++){
@@ -105,7 +134,7 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
 
             case INST_INC:
             
-                memcpy(&do_INST_INC_bytes[11], &inst[ip].operand, sizeof(int));
+                memcpy(&do_INST_INC_bytes[14], &inst[ip].operand, sizeof(int));
                 memcpy(ptr_do_INST_INC_bytes, &do_INST_INC_bytes, sizeof(do_INST_INC_bytes));
 
                 (*do_INST_INC)();
@@ -114,7 +143,7 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
 
             case INST_DEC:
                 
-                memcpy(&do_INST_DEC_bytes[11], &inst[ip].operand, sizeof(int));
+                memcpy(&do_INST_DEC_bytes[14], &inst[ip].operand, sizeof(int));
                 memcpy(ptr_do_INST_DEC_bytes, &do_INST_DEC_bytes, sizeof(do_INST_DEC_bytes));
 
                 (*do_INST_DEC)();
@@ -122,7 +151,22 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
                 break;
 
             case INST_IN:
+                
+                for(int i = 0 ; i < inst[ip].operand ; i++) {
+                    (*do_INST_IN)();
+                    getchar();      //handeling \n after input
+                }
+
+                break;
+
             case INST_OUT:
+                           
+                for(int i = 0 ; i < inst[ip].operand ; i++) {
+                    (*do_INST_OUT)();
+                }
+
+                break;
+                
             case INST_JMP_IF_ZERO:
             case INST_JMP_IF_NONZERO:
             default:
