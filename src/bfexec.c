@@ -26,6 +26,8 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
     char tape[30000] = {0};
     char* head = tape;
     char** head_add = &head;
+    unsigned int ip = 0;
+    unsigned int* ip_add = &ip;
 
 
     unsigned char do_INST_EXIT_bytes[] = {
@@ -81,8 +83,8 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
     unsigned char do_INST_IN_bytes[] = {
         0x49, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov r8, address_of_head
         0xb8, 0x00, 0x00, 0x00, 0x00,                                           //mov rax, 0    
-        0xbf, 0x00, 0x00, 0x00, 0x0,                                            //add rdi, 0
-        0x49, 0x8b, 0x30,                                                        //mov [r8], rsi
+        0xbf, 0x00, 0x00, 0x00, 0x0,                                            //mov rdi, 0
+        0x49, 0x8b, 0x30,                                                       //mov [r8], rsi
         0xba, 0x01, 0x00, 0x00, 0x0,                                            //mov rdx, 1 
         0x0f, 0x05,                                                             //syscall
         0xc3                                                                    //ret      
@@ -95,8 +97,8 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
     unsigned char do_INST_OUT_bytes[] = {
         0x49, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov r8, address_of_head
         0xb8, 0x01, 0x00, 0x00, 0x00,                                           //mov rax, 1    
-        0xbf, 0x01, 0x00, 0x00, 0x0,                                            //add rdi, 1
-        0x49, 0x8b, 0x30,                                                         //mov [r8], rsi
+        0xbf, 0x01, 0x00, 0x00, 0x0,                                            //mov rdi, 1
+        0x49, 0x8b, 0x30,                                                        //mov [r8], rsi
         0xba, 0x01, 0x00, 0x00, 0x0,                                            //mov rdx, 1 
         0x0f, 0x05,                                                             //syscall
         0xc3                                                                    //ret      
@@ -105,9 +107,39 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
     unsigned char* ptr_do_INST_OUT_bytes = make_exec(do_INST_OUT_bytes, sizeof(do_INST_OUT_bytes));
     void (*do_INST_OUT)() = (void(*)())ptr_do_INST_OUT_bytes;
 
+    unsigned char do_INST_JMP_IF_ZERO_bytes[] = {
+         0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov rax, address_of_head
+        0xbb, 0x00, 0x00, 0x00, 0x00,                                           //mov rbx, inst.operand  
+        0x48, 0xb9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov rcx, address_of_ip
+        0x48, 0x8b, 0x10,                                                       //mov rdx, [rax]
+        0x48, 0x83, 0x3a, 0x00,                                                 //cmp QWORD [rdx], 0
+        0x75, 0x03,                                                             //jne ret
+        0x48, 0x89, 0x19,                                                       //mov [rcx], rbx
+        0xc3                                                                    //ret      
+    };
+    memcpy(&do_INST_JMP_IF_ZERO_bytes[2], &head_add, sizeof(char**));
+    memcpy(&do_INST_JMP_IF_ZERO_bytes[17], &ip_add, sizeof(unsigned int*));
+    unsigned char* ptr_do_INST_JMP_IF_ZERO_bytes = make_exec(do_INST_JMP_IF_ZERO_bytes, sizeof(do_INST_JMP_IF_ZERO_bytes));
+    void (*do_INST_JMP_IF_ZERO)() = (void(*)())ptr_do_INST_JMP_IF_ZERO_bytes;
 
-    for(int ip = 0 ; ip < MAX_INST_CAPACITY; ip++){
-     
+    unsigned char do_INST_JMP_IF_NONZERO_bytes[] = {
+        0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov rax, address_of_head
+        0xbb, 0x00, 0x00, 0x00, 0x00,                                           //mov rbx, inst.operand  
+        0x48, 0xb9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov rcx, address_of_ip
+        0x48, 0x8b, 0x10,                                                       //mov rdx, [rax]
+        0x48, 0x83, 0x3a, 0x00,                                                 //cmp QWORD [rdx], 0
+        0x74, 0x03,                                                             //je ret
+        0x48, 0x89, 0x19,                                                       //mov [rcx], rbx
+        0xc3                                                                    //ret      
+    };
+    memcpy(&do_INST_JMP_IF_NONZERO_bytes[2], &head_add, sizeof(char**));
+    memcpy(&do_INST_JMP_IF_NONZERO_bytes[17], &ip_add, sizeof(unsigned int*));
+    unsigned char* ptr_do_INST_JMP_IF_NONZERO_bytes = make_exec(do_INST_JMP_IF_NONZERO_bytes, sizeof(do_INST_JMP_IF_NONZERO_bytes));
+    void (*do_INST_JMP_IF_NONZERO)() = (void(*)())ptr_do_INST_JMP_IF_NONZERO_bytes;
+
+
+    for(ip = 0 ; ip < MAX_INST_CAPACITY; ip++){
+   
         switch (inst[ip].opcode) {
 
             case INST_EXIT: 
@@ -168,7 +200,23 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
                 break;
                 
             case INST_JMP_IF_ZERO:
-            case INST_JMP_IF_NONZERO:
+
+                memcpy(&do_INST_JMP_IF_ZERO_bytes[11], &inst[ip].operand, sizeof(int));
+                memcpy(ptr_do_INST_JMP_IF_ZERO_bytes, &do_INST_JMP_IF_ZERO_bytes, sizeof(do_INST_JMP_IF_ZERO_bytes));
+
+                (*do_INST_JMP_IF_ZERO)();
+
+                break;
+
+	        case INST_JMP_IF_NONZERO:
+
+                memcpy(&do_INST_JMP_IF_NONZERO_bytes[11], &inst[ip].operand, sizeof(int));
+                memcpy(ptr_do_INST_JMP_IF_NONZERO_bytes, &do_INST_JMP_IF_NONZERO_bytes, sizeof(do_INST_JMP_IF_NONZERO_bytes));
+
+                (*do_INST_JMP_IF_NONZERO)();
+
+                break;
+
             default:
         
         }
