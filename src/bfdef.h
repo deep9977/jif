@@ -1,7 +1,7 @@
 #ifndef BFDEF
 #define BFDEF
 
-#define MAX_INST_CAPACITY 256
+#define MAX_INST_CAPACITY 4096
 
 typedef enum {
         INST_EXIT = 0,

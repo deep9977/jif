@@ -30,14 +30,6 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
     unsigned int* ip_add = &ip;
 
 
-    unsigned char do_INST_EXIT_bytes[] = {
-        0xb8, 0x3c, 0x00, 0x00, 0x00,                              //mov rax, 60
-        0xbf, 0x46, 0x00, 0x00, 0x00,                              //mov rdi, 0
-        0x0f, 0x05                                                 //syscall    
-    };
-    unsigned char* ptr_do_INST_EXIT_bytes = make_exec(do_INST_EXIT_bytes, sizeof(do_INST_EXIT_bytes));
-    void (*do_INST_EXIT)() = (void(*)()) ptr_do_INST_EXIT_bytes;
-
     unsigned char do_INST_MOVR_bytes[] = {
         0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov rax, address_of_head
         0xbb, 0x00, 0x00, 0x00, 0x00,                                           //mov rbx, inst.operand    
@@ -61,8 +53,8 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
     unsigned char do_INST_INC_bytes[] = {
         0x49, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov r8, address_of_head
         0x49, 0x8b ,0x00,                                                       //mov rax, [r8]
-        0xbb, 0x00, 0x00, 0x00, 0x00,                                           //mov rbx, inst.operand    
-        0x48,0x01, 0x18,                                                        //add QWORD [rax], rbx
+        0xb3, 0x00,                                                                 //mov rbx, inst.operand    
+        0x00, 0x18,                                                        //add BYTE [rax], bl
         0xc3                                                                    //ret      
     };
     memcpy(&do_INST_INC_bytes[2], &head_add, sizeof(char*));
@@ -72,8 +64,8 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
     unsigned char do_INST_DEC_bytes[] = {
          0x49, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,             //mov r8, address_of_head
         0x49, 0x8b ,0x00,                                                       //mov rax, [r8]
-        0xbb, 0x00, 0x00, 0x00, 0x00,                                           //mov rbx, inst.operand    
-        0x48,0x29, 0x18,                                                        //sub QWORD [rax], rbx
+        0xb3, 0x00,                                                                //mov bl, inst.operand    
+        0x28, 0x18,                                                        //sub BYTE [rax], bl
         0xc3                                                                    //ret      
     };
     memcpy(&do_INST_DEC_bytes[2], &head_add, sizeof(char*));
@@ -144,7 +136,7 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
 
             case INST_EXIT: 
                 
-                (*do_INST_EXIT)();
+                goto cleanup;
 
             case INST_MOVL:
 
@@ -166,7 +158,9 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
 
             case INST_INC:
             
-                memcpy(&do_INST_INC_bytes[14], &inst[ip].operand, sizeof(int));
+                uint8_t num = (uint8_t) inst[ip].operand;
+            
+                memcpy(&do_INST_INC_bytes[14], &num, 1);
                 memcpy(ptr_do_INST_INC_bytes, &do_INST_INC_bytes, sizeof(do_INST_INC_bytes));
 
                 (*do_INST_INC)();
@@ -174,8 +168,9 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
                 break;
 
             case INST_DEC:
-                
-                memcpy(&do_INST_DEC_bytes[14], &inst[ip].operand, sizeof(int));
+                            
+                num = (uint8_t) inst[ip].operand;
+                memcpy(&do_INST_DEC_bytes[14], &num, 1);
                 memcpy(ptr_do_INST_DEC_bytes, &do_INST_DEC_bytes, sizeof(do_INST_DEC_bytes));
 
                 (*do_INST_DEC)();
@@ -218,7 +213,22 @@ void bfexec(INST inst[MAX_INST_CAPACITY]){
                 break;
 
             default:
+
+                goto cleanup;
         
         }
     }    
+
+cleanup: 
+
+    munmap(ptr_do_INST_MOVR_bytes, sizeof(do_INST_MOVR_bytes));
+    munmap(ptr_do_INST_MOVL_bytes, sizeof(do_INST_MOVL_bytes));
+    munmap(ptr_do_INST_INC_bytes, sizeof(do_INST_INC_bytes));   
+    munmap(ptr_do_INST_DEC_bytes, sizeof(do_INST_DEC_bytes));
+    munmap(ptr_do_INST_OUT_bytes, sizeof(do_INST_OUT_bytes));
+    munmap(ptr_do_INST_IN_bytes, sizeof(do_INST_IN_bytes));
+    munmap(ptr_do_INST_JMP_IF_NONZERO_bytes, sizeof(do_INST_JMP_IF_NONZERO));
+    munmap(ptr_do_INST_JMP_IF_ZERO_bytes, sizeof(do_INST_JMP_IF_ZERO));
+        
+    return;
 }

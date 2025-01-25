@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <stdint.h>
 #include "bfdef.h"
 
 void* make_exec(unsigned char*, size_t);
